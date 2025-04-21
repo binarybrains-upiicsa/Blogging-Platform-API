@@ -6,10 +6,24 @@
     "zod": "npm:zod@^3.24.3"
   },
   "tasks": {
-    "start": "deno run --allow-net main.ts"
+    "start": "deno run --allow-net main.ts",
+    "watch": "deno run --allow-net --watch main.ts"
   },
   "compilerOptions": {
     "jsx": "precompile",
     "jsxImportSource": "hono/jsx"
+  },
+  "lint": {
+    "rules": {
+      "include": [
+        "eqeqeq",
+        "camelcase",
+        "explicit-function-return-type"
+      ],
+      "tags": ["recommended"]
+    }
+  },
+  "fmt": {
+    "singleQuote": true
   }
 }
