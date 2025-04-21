@@ -1,9 +1,10 @@
-import { Hono } from 'hono'
+import { Hono } from "hono";
 
-const app = new Hono()
+const app = new Hono();
 
-app.get('/', (c) => {
-  return c.text('Hello Hono!')
-})
+app.get("/", (c) => {
+	c.status(418)
+	return c.json("I'm a teapot!")
+});
 
-Deno.serve(app.fetch)
+Deno.serve(app.fetch);
