@@ -1,0 +1,39 @@
+{
+  "version": "4",
+  "specifiers": {
+    "jsr:@egamagz/todo@1": "1.0.0",
+    "jsr:@hono/hono@^4.7.7": "4.7.7",
+    "npm:neverthrow@^8.2.0": "8.2.0",
+    "npm:zod@^3.24.3": "3.24.3"
+  },
+  "jsr": {
+    "@egamagz/todo@1.0.0": {
+      "integrity": "4b89321b6a5291109f063bafe72e569b7a2dd8fa05d2b0d8eec2528b811f10ad"
+    },
+    "@hono/hono@4.7.7": {
+      "integrity": "74ea9985cb405fada079a922538f6baa06fa1ee150ce409c5bdae2c89ac05cba"
+    }
+  },
+  "npm": {
+    "@rollup/rollup-linux-x64-gnu@4.39.0": {
+      "integrity": "sha512-t9jqYw27R6Lx0XKfEFe5vUeEJ5pF3SGIM6gTfONSMb7DuG6z6wfj2yjcoZxHg129veTqU7+wOhY6GX8wmf90dA=="
+    },
+    "neverthrow@8.2.0": {
+      "integrity": "sha512-kOCT/1MCPAxY5iUV3wytNFUMUolzuwd/VF/1KCx7kf6CutrOsTie+84zTGTpgQycjvfLdBBdvBvFLqFD2c0wkQ==",
+      "dependencies": [
+        "@rollup/rollup-linux-x64-gnu"
+      ]
+    },
+    "zod@3.24.3": {
+      "integrity": "sha512-HhY1oqzWCQWuUqvBFnsyrtZRhyPeR7SUGv+C4+MsisMuVfSPx8HpwWqH8tRahSlt6M3PiFAcoeFhZAqIXTxoSg=="
+    }
+  },
+  "workspace": {
+    "dependencies": [
+      "jsr:@egamagz/todo@1",
+      "jsr:@hono/hono@^4.7.7",
+      "npm:neverthrow@^8.2.0",
+      "npm:zod@^3.24.3"
+    ]
+  }
+}
