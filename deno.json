@@ -11,8 +11,8 @@
     "@/": "./"
   },
   "tasks": {
-    "start": "deno run --allow-net main.ts",
-    "watch": "deno run --allow-net --watch main.ts",
+    "start": "deno run -A main.ts",
+    "watch": "deno run -A --watch main.ts",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push --skip-generate",
     "prisma:studio": "prisma studio"
