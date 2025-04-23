@@ -1,6 +1,6 @@
 import { CreatePost, Post, UpdatePost } from '../schemas/post.ts';
 import { TODO } from '@egamagz/todo';
-import { ResultAsync } from "neverthrow";
+import { err, errAsync, ResultAsync } from "neverthrow";
 import prisma from '@/database/prisma.ts';
 import { DatabaseData, DatabaseError } from '@/schemas/database-data.ts';
 
@@ -51,8 +51,9 @@ export class PostsRepository {
 
     return result;
   }
-  getAllPosts(term?: string): Post[] {
-    TODO('Method not implemented.');
+
+  getAllPosts(term?: string): ResultAsync<DatabaseData<Post[]>, DatabaseError> {
+    TODO("ASD")
   }
   getPostById(id: number): Post {
     TODO('Method not implemented.');

@@ -4,13 +4,18 @@ import { validateSchema } from '@/util/validator.ts';
 import { CreatePostSchema, Post } from '../schemas/post.ts';
 import { PostsRepository } from '@/repository/posts.ts';
 import { ApiResponse } from '@/schemas/api-response.ts';
+import { z } from 'zod';
 
 const app = new Hono();
 
-app.get('/', async (c) => {
-  const posts = await prisma.post.findMany();
-  return c.json(posts);
-});
+app.get('/',
+  validateSchema('query', z.object({
+    term: z.string().optional(),
+  })),
+  async (c) => {
+    const { term } = c.req.valid('query');
+    return c.json({});
+  });
 app.post(
   '/',
   validateSchema('json', CreatePostSchema),
