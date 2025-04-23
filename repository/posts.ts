@@ -1,32 +1,31 @@
 import { CreatePost, Post, UpdatePost } from '../schemas/post.ts';
 import { TODO } from '@egamagz/todo';
-import { err, Result, ResultAsync } from "neverthrow";
+import { err, ok, Result, ResultAsync } from 'neverthrow';
 import prisma from '@/database/prisma.ts';
 import { DatabaseData, DatabaseError } from '@/schemas/database-data.ts';
-
 
 export class PostsRepository {
   createPost(post: CreatePost): ResultAsync<DatabaseData<Post>, DatabaseError> {
     const result = ResultAsync.fromPromise(
       prisma.$transaction(async (tx) => {
         let category = await tx.category.findFirst({
-          where: { name: post.category }
+          where: { name: post.category },
         });
 
         if (!category) {
           category = await tx.category.create({
-            data: { name: post.category }
+            data: { name: post.category },
           });
         }
 
         const tags = await Promise.all(
-          post.tags.map(name =>
+          post.tags.map((name) =>
             tx.tag.upsert({
               where: { name },
               create: { name },
               update: {},
             })
-          )
+          ),
         );
 
         const createdPost = await tx.post.create({
@@ -35,21 +34,21 @@ export class PostsRepository {
             content: post.content,
             title: post.title,
             tags: {
-              connect: tags.map(tag => ({ id: tag.id }))
+              connect: tags.map((tag) => ({ id: tag.id })),
             },
           },
           include: {
             category: {
               select: {
-                name: true
-              }
+                name: true,
+              },
             },
             tags: {
               select: {
-                name: true
-              }
-            }
-          }
+                name: true,
+              },
+            },
+          },
         });
 
         return {
@@ -58,17 +57,19 @@ export class PostsRepository {
             title: createdPost.title,
             content: createdPost.content,
             category: createdPost.category.name,
-            tags: createdPost.tags.map(tag => tag.name),
+            tags: createdPost.tags.map((tag) => tag.name),
             createdAt: createdPost.createdAt.toISOString(),
-            updatedAt: createdPost.updatedAt.toISOString()
+            updatedAt: createdPost.updatedAt.toISOString(),
           },
-          message: "Post created successfully"
+          message: 'Post created successfully',
         };
       }),
       (error) => ({
-        type: "DATABASE_ERROR",
-        message: error instanceof Error ? error.message : 'Failed to create post'
-      } as DatabaseError)
+        type: 'DATABASE_ERROR',
+        message: error instanceof Error
+          ? error.message
+          : 'Failed to create post',
+      } as DatabaseError),
     );
 
     return result;
@@ -77,39 +78,86 @@ export class PostsRepository {
   getAllPosts(term?: string): ResultAsync<DatabaseData<Post[]>, DatabaseError> {
     const result = ResultAsync.fromPromise(
       prisma.post.findMany({
-        where: term ? {
-          OR: [
-            { title: { contains: term } },
-            { content: { contains: term } },
-            { category: { name: { contains: term } } }
-          ]
-        } : undefined,
+        where: term
+          ? {
+            OR: [
+              { title: { contains: term } },
+              { content: { contains: term } },
+              { category: { name: { contains: term } } },
+            ],
+          }
+          : undefined,
         include: {
           category: true,
-          tags: true
-        }
-      }).then(posts => ({
-        data: posts.map(post => ({
+          tags: true,
+        },
+      }).then((posts) => ({
+        data: posts.map((post) => ({
           id: post.id,
           title: post.title,
           content: post.content,
           category: post.category.name,
-          tags: post.tags.map(tag => tag.name),
+          tags: post.tags.map((tag) => tag.name),
           createdAt: post.createdAt.toISOString(),
-          updatedAt: post.updatedAt.toISOString()
+          updatedAt: post.updatedAt.toISOString(),
         })),
-        message: term ? "Posts found successfully" : "All posts retrieved successfully"
+        message: term
+          ? 'Posts found successfully'
+          : 'All posts retrieved successfully',
       })),
       (error) => ({
-        type: "DATABASE_ERROR",
-        message: error instanceof Error ? error.message : 'Failed to search posts'
-      } as DatabaseError)
+        type: 'DATABASE_ERROR',
+        message: error instanceof Error
+          ? error.message
+          : 'Failed to search posts',
+      } as DatabaseError),
     );
 
     return result;
   }
-  getPostById(id: number): Post {
-    TODO('Method not implemented.');
+  async getPostById(
+    id: number,
+  ): Promise<Result<DatabaseData<Post>, DatabaseError>> {
+    const result = ResultAsync.fromPromise(
+      prisma.post.findUnique({
+        where: { id },
+        include: {
+          category: true,
+          tags: true,
+        },
+      }),
+      (error) => ({
+        type: 'DATABASE_ERROR',
+        message: error instanceof Error
+          ? error.message
+          : 'Failed to retrieve post',
+      } as DatabaseError),
+    );
+
+    const post = await result;
+    if (post.isErr()) {
+      return err(post.error);
+    }
+
+    if (!post.value) {
+      return err({
+        type: 'NOT_FOUND',
+        message: 'Post not found',
+      } as DatabaseError);
+    }
+
+    return ok({
+      data: {
+        id: post.value.id,
+        title: post.value.title,
+        content: post.value.content,
+        category: post.value.category.name,
+        tags: post.value.tags.map((tag) => tag.name),
+        createdAt: post.value.createdAt.toISOString(),
+        updatedAt: post.value.updatedAt.toISOString(),
+      },
+      message: 'Post retrieved successfully',
+    });
   }
   deletePost(id: number): Post {
     TODO('Method not implemented.');

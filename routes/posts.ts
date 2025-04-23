@@ -7,10 +7,14 @@ import { z } from 'zod';
 
 const app = new Hono();
 
-app.get('/',
-  validateSchema('query', z.object({
-    term: z.string().optional(),
-  })),
+app.get(
+  '/',
+  validateSchema(
+    'query',
+    z.object({
+      term: z.string().optional(),
+    }),
+  ),
   async (c) => {
     const { term } = c.req.valid('query');
     const repository = new PostsRepository();
@@ -19,11 +23,11 @@ app.get('/',
     if (posts.isErr()) {
       const apiResponse: ApiResponse = {
         error: {
-          code: "SERVER_ERROR",
-          message: posts.error.message
+          code: 'SERVER_ERROR',
+          message: posts.error.message,
         },
-        success: false
-      }
+        success: false,
+      };
 
       return c.json(apiResponse);
     }
@@ -33,45 +37,93 @@ app.get('/',
     const apiResponse: ApiResponse<Post[]> = {
       success: true,
       data,
-      message
-    }
+      message,
+    };
 
     return c.json(apiResponse);
-  });
+  },
+);
 app.post(
   '/',
   validateSchema('json', CreatePostSchema),
-  async (c,) => {
+  async (c) => {
     const post = c.req.valid('json');
     const repository = new PostsRepository();
     const createdPost = await repository.createPost(post);
 
     if (createdPost.isErr()) {
-
       const apiResponse: ApiResponse = {
         error: {
           code: 'SERVER_ERROR',
-          message: createdPost.error.message
+          message: createdPost.error.message,
         },
-        success: false
-      }
+        success: false,
+      };
 
-      return c.json(apiResponse, 500)
-
+      return c.json(apiResponse, 500);
     }
 
     const { data, message } = createdPost.value;
     const apiResponse: ApiResponse<Post> = {
       message,
       data,
-      success: true
-    }
+      success: true,
+    };
 
-    return c.json(apiResponse, 201)
-
+    return c.json(apiResponse, 201);
   },
 );
-app.put('/:id', (c) => c.text('PUT'));
-app.get('/:id', (c) => c.text('GET'));
+app.put(
+  '/:id',
+  async (c) => {
+    return c.json({});
+  },
+);
+app.get(
+  '/:id',
+  validateSchema(
+    'param',
+    z.object({
+      id: z.coerce.number().positive().safe(),
+    }),
+  ),
+  async (c) => {
+    const { id } = c.req.valid('param');
+    const repository = new PostsRepository();
+    const post = await repository.getPostById(id);
+
+    if (post.isErr()) {
+      if (post.error.type === 'NOT_FOUND') {
+        const apiResponse: ApiResponse = {
+          error: {
+            code: 'NOT_FOUND',
+            message: post.error.message,
+          },
+          success: false,
+        };
+
+        return c.json(apiResponse, 404);
+      }
+      const apiResponse: ApiResponse = {
+        error: {
+          code: 'SERVER_ERROR',
+          message: post.error.message,
+        },
+        success: false,
+      };
+
+      return c.json(apiResponse, 500);
+    }
+
+    const { data, message } = post.value;
+    const apiResponse: ApiResponse<Post> = {
+      message,
+      data,
+      success: true,
+    };
+
+    return c.json(apiResponse);
+  },
+);
 
 export default app;
