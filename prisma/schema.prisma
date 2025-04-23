@@ -1,7 +1,6 @@
-
 generator client {
- provider = "prisma-client"
-  output = "../generated/prisma"
+  provider = "prisma-client"
+  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -10,13 +9,15 @@ datasource db {
 }
 
 model Post {
-  id        Int      @id @default(autoincrement())
-  title     String
-  content   String
-  category  String
-  tags      Tag[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         Int      @id @default(autoincrement())
+  title      String
+  content    String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: Cascade )
+  tags       Tag[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  categoryId Int
 }
 
 model Tag {
@@ -26,4 +27,9 @@ model Tag {
   Post Post[]
 }
 
-  
+model Category {
+  id   Int    @id @default(autoincrement())
+  name String
+
+  Post Post[]
+}
