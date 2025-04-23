@@ -1,4 +1,4 @@
-import { CreatePost, Post, UpdatePost } from '@/schemas/posts.ts';
+import { CreatePost, Post, UpdatePost } from '../schemas/post.ts';
 import { TODO } from '@egamagz/todo';
 import { ResultAsync } from "neverthrow";
 import prisma from '@/database/prisma.ts';

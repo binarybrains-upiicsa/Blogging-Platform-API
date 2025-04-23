@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import prisma from '@/database/prisma.ts';
 import { validateSchema } from '@/util/validator.ts';
-import { CreatePostSchema, Post } from '@/schemas/posts.ts';
+import { CreatePostSchema, Post } from '../schemas/post.ts';
 import { PostsRepository } from '@/repository/posts.ts';
 import { ApiResponse } from '@/schemas/api-response.ts';
 
