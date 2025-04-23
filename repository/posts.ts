@@ -154,8 +154,8 @@ export class PostsRepository {
       message: 'Post retrieved successfully',
     });
   }
-  deletePost(id: number): ResultAsync<DatabaseData<Post>, DatabaseError> {
-    return ResultAsync.fromPromise(
+  async deletePost(id: number): Promise<Result<DatabaseData<Post>, DatabaseError>> {
+    const result = ResultAsync.fromPromise(
       prisma.post.delete({
         where: { id },
         include: {
@@ -169,18 +169,32 @@ export class PostsRepository {
           ? error.message
           : 'Failed to delete post',
       } as DatabaseError),
-    ).map((post) => ({
+    );
+
+    const deletedPost = await result;
+
+    if (deletedPost.isErr()) {
+      return err(deletedPost.error);
+    }
+
+    if (!deletedPost.value) {
+      return err({
+        message: "Post not found",
+        type: "NOT_FOUND"
+      } as DatabaseError)
+    }
+    return ok({
       data: {
-        id: post.id,
-        title: post.title,
-        content: post.content,
-        category: post.category.name,
-        tags: post.tags.map((tag) => tag.name),
-        createdAt: post.createdAt.toISOString(),
-        updatedAt: post.updatedAt.toISOString(),
+        id: deletedPost.value.id,
+        title: deletedPost.value.title,
+        content: deletedPost.value.content,
+        category: deletedPost.value.category.name,
+        tags: deletedPost.value.tags.map((tag) => tag.name),
+        createdAt: deletedPost.value.createdAt.toISOString(),
+        updatedAt: deletedPost.value.updatedAt.toISOString(),
       },
       message: 'Post deleted successfully',
-    }));
+    });
   }
   updatePost(
     id: number,
