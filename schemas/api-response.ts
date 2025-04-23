@@ -12,11 +12,12 @@ export type ApiSuccessResponse<T> = {
 
 export type ApiErrorResponse = {
   success: false;
-  data: null;
   error: {
     message: string;
     code: ErrorCode;
   };
 };
 
-export type ApiResponse<T = null> = ApiSuccessResponse<T> | ApiErrorResponse;
+export type ApiResponse<T = void> = T extends void
+  ? ApiErrorResponse
+  : ApiSuccessResponse<T> | ApiErrorResponse;
