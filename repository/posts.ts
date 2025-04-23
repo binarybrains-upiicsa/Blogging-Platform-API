@@ -1,5 +1,4 @@
 import { CreatePost, Post, UpdatePost } from '../schemas/post.ts';
-import { TODO } from '@egamagz/todo';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import prisma from '@/database/prisma.ts';
 import { DatabaseData, DatabaseError } from '@/schemas/database-data.ts';
@@ -216,6 +215,7 @@ export class PostsRepository {
             content: post.content,
             categoryId: categories.id,
             tags: {
+              set: [],
               connect: tags.map((tag) => ({ id: tag.id })),
             },
           },
