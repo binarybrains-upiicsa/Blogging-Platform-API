@@ -2,19 +2,11 @@ import { CreatePost, Post, UpdatePost } from '@/schemas/posts.ts';
 import { TODO } from '@egamagz/todo';
 import { ResultAsync } from "neverthrow";
 import prisma from '@/database/prisma.ts';
+import { DatabaseData, DatabaseError } from '@/schemas/database-data.ts';
 
-type PostError =
-  | { type: 'NOT_FOUND'; message: string }
-  | { type: 'VALIDATION_ERROR'; message: string }
-  | { type: 'DATABASE_ERROR'; message: string };
-
-type PostData<T> = {
-  data: T;
-  message: string;
-}
 
 export class PostsRepository {
-  createPost(post: CreatePost): ResultAsync<PostData<Post>, PostError> {
+  createPost(post: CreatePost): ResultAsync<DatabaseData<Post>, DatabaseError> {
     const result = ResultAsync.fromPromise(
       prisma.$transaction(async (tx) => {
         const tags = await Promise.all(
@@ -54,7 +46,7 @@ export class PostsRepository {
       (error) => ({
         type: "DATABASE_ERROR",
         message: error instanceof Error ? error.message : 'Failed to create post'
-      } as PostError)
+      } as DatabaseError)
     );
 
     return result;
