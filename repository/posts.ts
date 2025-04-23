@@ -1,6 +1,6 @@
 import { CreatePost, Post, UpdatePost } from '../schemas/post.ts';
 import { TODO } from '@egamagz/todo';
-import { ResultAsync } from "neverthrow";
+import { err, Result, ResultAsync } from "neverthrow";
 import prisma from '@/database/prisma.ts';
 import { DatabaseData, DatabaseError } from '@/schemas/database-data.ts';
 
@@ -39,8 +39,16 @@ export class PostsRepository {
             },
           },
           include: {
-            category: true,
-            tags: true
+            category: {
+              select: {
+                name: true
+              }
+            },
+            tags: {
+              select: {
+                name: true
+              }
+            }
           }
         });
 
@@ -66,8 +74,48 @@ export class PostsRepository {
     return result;
   }
 
-  getAllPosts(term?: string): ResultAsync<DatabaseData<Post[]>, DatabaseError> {
-    TODO("SAMPLE")
+  async getAllPosts(term?: string): Promise<Result<DatabaseData<Post[]>, DatabaseError>> {
+    const result = ResultAsync.fromPromise(prisma.post.findMany({
+      where: {
+        title: {
+          contains: term
+        },
+        category: {
+          name: term
+        },
+        content: {
+          contains: term
+        }
+      },
+      include: {
+        category: {
+          select: {
+            name: true
+          }
+        },
+        tags: {
+          select: {
+            name: true
+          }
+        }
+      }
+    }).then(posts => ({
+      data: posts.map(post => ({
+        id: post.id,
+        title: post.title,
+        content: post.content,
+        category: post.category.name,
+        tags: post.tags.map(tag => tag.name),
+        createdAt: post.createdAt.toISOString(),
+        updatedAt: post.updatedAt.toISOString()
+      }))
+    } as DatabaseData<Post[]>)), (error) => ({
+      type: "DATABASE_ERROR",
+      message: error instanceof Error ? error.message : 'Failed to search post'
+    } as DatabaseError));
+
+    return result;
+
   }
   getPostById(id: number): Post {
     TODO('Method not implemented.');

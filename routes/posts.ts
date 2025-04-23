@@ -13,8 +13,32 @@ app.get('/',
     term: z.string().optional(),
   })),
   async (c) => {
+    console.log("ASD")
     const { term } = c.req.valid('query');
-    return c.json({});
+    const repository = new PostsRepository();
+    const posts = await repository.getAllPosts(term);
+
+    if (posts.isErr()) {
+      const apiResponse: ApiResponse = {
+        error: {
+          code: "SERVER_ERROR",
+          message: posts.error.message
+        },
+        success: false
+      }
+
+      return c.json(apiResponse);
+    }
+
+    const { data, message } = posts.value;
+
+    const apiResponse: ApiResponse<Post[]> = {
+      success: true,
+      data,
+      message
+    }
+
+    return c.json(apiResponse);
   });
 app.post(
   '/',
