@@ -6,7 +6,7 @@ import { DatabaseData, DatabaseError } from '@/schemas/database-data.ts';
 
 export class PostsRepository {
   createPost(post: CreatePost): ResultAsync<DatabaseData<Post>, DatabaseError> {
-    const result = ResultAsync.fromPromise(
+    return ResultAsync.fromPromise(
       prisma.$transaction(async (tx) => {
         let category = await tx.category.findFirst({
           where: { name: post.category },
@@ -71,12 +71,10 @@ export class PostsRepository {
           : 'Failed to create post',
       } as DatabaseError),
     );
-
-    return result;
   }
 
   getAllPosts(term?: string): ResultAsync<DatabaseData<Post[]>, DatabaseError> {
-    const result = ResultAsync.fromPromise(
+    return ResultAsync.fromPromise(
       prisma.post.findMany({
         where: term
           ? {
@@ -91,29 +89,27 @@ export class PostsRepository {
           category: true,
           tags: true,
         },
-      }).then((posts) => ({
-        data: posts.map((post) => ({
-          id: post.id,
-          title: post.title,
-          content: post.content,
-          category: post.category.name,
-          tags: post.tags.map((tag) => tag.name),
-          createdAt: post.createdAt.toISOString(),
-          updatedAt: post.updatedAt.toISOString(),
-        })),
-        message: term
-          ? 'Posts found successfully'
-          : 'All posts retrieved successfully',
-      })),
+      }),
       (error) => ({
         type: 'DATABASE_ERROR',
         message: error instanceof Error
           ? error.message
           : 'Failed to search posts',
       } as DatabaseError),
-    );
-
-    return result;
+    ).map((posts) => ({
+      data: posts.map((post) => ({
+        id: post.id,
+        title: post.title,
+        content: post.content,
+        category: post.category.name,
+        tags: post.tags.map((tag) => tag.name),
+        createdAt: post.createdAt.toISOString(),
+        updatedAt: post.updatedAt.toISOString(),
+      })),
+      message: term
+        ? 'Posts found successfully'
+        : 'All posts retrieved successfully',
+    }));
   }
   async getPostById(
     id: number,
@@ -159,10 +155,91 @@ export class PostsRepository {
       message: 'Post retrieved successfully',
     });
   }
-  deletePost(id: number): Post {
-    TODO('Method not implemented.');
+  deletePost(id: number): ResultAsync<DatabaseData<Post>, DatabaseError> {
+    return ResultAsync.fromPromise(
+      prisma.post.delete({
+        where: { id },
+        include: {
+          category: true,
+          tags: true,
+        },
+      }),
+      (error) => ({
+        type: 'DATABASE_ERROR',
+        message: error instanceof Error
+          ? error.message
+          : 'Failed to delete post',
+      } as DatabaseError),
+    ).map((post) => ({
+      data: {
+        id: post.id,
+        title: post.title,
+        content: post.content,
+        category: post.category.name,
+        tags: post.tags.map((tag) => tag.name),
+        createdAt: post.createdAt.toISOString(),
+        updatedAt: post.updatedAt.toISOString(),
+      },
+      message: 'Post deleted successfully',
+    }));
   }
-  updatePost(id: number, post: UpdatePost): Post {
-    TODO('Method not implemented.');
+  updatePost(
+    id: number,
+    post: UpdatePost,
+  ): ResultAsync<DatabaseData<Post>, DatabaseError> {
+    return ResultAsync.fromPromise(
+      prisma.$transaction(async (tx) => {
+        let categories = await tx.category.findFirst({
+          where: { name: post.category },
+        });
+
+        if (!categories) {
+          categories = await tx.category.create({
+            data: { name: post.category },
+          });
+        }
+
+        const tags = await Promise.all(
+          post.tags.map((name) =>
+            tx.tag.upsert({
+              where: { name },
+              create: { name },
+              update: {},
+            })
+          ),
+        );
+
+        const updatedPost = await tx.post.update({
+          where: { id },
+          data: {
+            title: post.title,
+            content: post.content,
+            categoryId: categories.id,
+            tags: {
+              connect: tags.map((tag) => ({ id: tag.id })),
+            },
+          },
+        });
+
+        return {
+          data: {
+            id: updatedPost.id,
+            title: updatedPost.title,
+            content: updatedPost.content,
+            category: categories.name,
+            tags: tags.map((tag) => tag.name),
+            createdAt: updatedPost.createdAt.toISOString(),
+            updatedAt: updatedPost.updatedAt.toISOString(),
+          },
+          message: 'Post updated successfully',
+        };
+      }),
+      (error) => ({
+        type: 'DATABASE_ERROR',
+        message: error instanceof Error
+          ? error.message
+          : 'Failed to update post',
+      } as DatabaseError),
+    );
   }
 }

@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { validateSchema } from '@/util/validator.ts';
-import { CreatePostSchema, Post } from '../schemas/post.ts';
+import { CreatePostSchema, Post, UpdatePostSchema } from '../schemas/post.ts';
 import { PostsRepository } from '@/repository/posts.ts';
 import { ApiResponse } from '@/schemas/api-response.ts';
 import { z } from 'zod';
@@ -75,8 +75,39 @@ app.post(
 );
 app.put(
   '/:id',
+  validateSchema(
+    'param',
+    z.object({
+      id: z.coerce.number().positive().safe(),
+    }),
+  ),
+  validateSchema('json', UpdatePostSchema),
   async (c) => {
-    return c.json({});
+    const { id } = c.req.valid('param');
+    const post = c.req.valid('json');
+    const repository = new PostsRepository();
+    const updatedPost = await repository.updatePost(id, post);
+
+    if (updatedPost.isErr()) {
+      const apiResponse: ApiResponse = {
+        error: {
+          code: 'SERVER_ERROR',
+          message: updatedPost.error.message,
+        },
+        success: false,
+      };
+
+      return c.json(apiResponse, 500);
+    }
+
+    const { data, message } = updatedPost.value;
+    const apiResponse: ApiResponse<Post> = {
+      message,
+      data,
+      success: true,
+    };
+
+    return c.json(apiResponse, 200);
   },
 );
 app.get(
