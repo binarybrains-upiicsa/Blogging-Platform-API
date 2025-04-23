@@ -1,5 +1,4 @@
 import { Hono } from 'hono';
-import prisma from '@/database/prisma.ts';
 import { validateSchema } from '@/util/validator.ts';
 import { CreatePostSchema, Post } from '../schemas/post.ts';
 import { PostsRepository } from '@/repository/posts.ts';
@@ -13,7 +12,6 @@ app.get('/',
     term: z.string().optional(),
   })),
   async (c) => {
-    console.log("ASD")
     const { term } = c.req.valid('query');
     const repository = new PostsRepository();
     const posts = await repository.getAllPosts(term);

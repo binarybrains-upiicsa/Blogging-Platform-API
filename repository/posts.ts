@@ -74,48 +74,39 @@ export class PostsRepository {
     return result;
   }
 
-  async getAllPosts(term?: string): Promise<Result<DatabaseData<Post[]>, DatabaseError>> {
-    const result = ResultAsync.fromPromise(prisma.post.findMany({
-      where: {
-        title: {
-          contains: term
-        },
-        category: {
-          name: term
-        },
-        content: {
-          contains: term
+  getAllPosts(term?: string): ResultAsync<DatabaseData<Post[]>, DatabaseError> {
+    const result = ResultAsync.fromPromise(
+      prisma.post.findMany({
+        where: term ? {
+          OR: [
+            { title: { contains: term } },
+            { content: { contains: term } },
+            { category: { name: { contains: term } } }
+          ]
+        } : undefined,
+        include: {
+          category: true,
+          tags: true
         }
-      },
-      include: {
-        category: {
-          select: {
-            name: true
-          }
-        },
-        tags: {
-          select: {
-            name: true
-          }
-        }
-      }
-    }).then(posts => ({
-      data: posts.map(post => ({
-        id: post.id,
-        title: post.title,
-        content: post.content,
-        category: post.category.name,
-        tags: post.tags.map(tag => tag.name),
-        createdAt: post.createdAt.toISOString(),
-        updatedAt: post.updatedAt.toISOString()
-      }))
-    } as DatabaseData<Post[]>)), (error) => ({
-      type: "DATABASE_ERROR",
-      message: error instanceof Error ? error.message : 'Failed to search post'
-    } as DatabaseError));
+      }).then(posts => ({
+        data: posts.map(post => ({
+          id: post.id,
+          title: post.title,
+          content: post.content,
+          category: post.category.name,
+          tags: post.tags.map(tag => tag.name),
+          createdAt: post.createdAt.toISOString(),
+          updatedAt: post.updatedAt.toISOString()
+        })),
+        message: term ? "Posts found successfully" : "All posts retrieved successfully"
+      })),
+      (error) => ({
+        type: "DATABASE_ERROR",
+        message: error instanceof Error ? error.message : 'Failed to search posts'
+      } as DatabaseError)
+    );
 
     return result;
-
   }
   getPostById(id: number): Post {
     TODO('Method not implemented.');
