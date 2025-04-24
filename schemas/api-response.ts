@@ -18,6 +18,5 @@ export type ApiErrorResponse = {
   };
 };
 
-export type ApiResponse<T = void> = T extends void
-  ? ApiErrorResponse
+export type ApiResponse<T = void> = T extends void ? ApiErrorResponse
   : ApiSuccessResponse<T> | ApiErrorResponse;
