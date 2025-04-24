@@ -2,6 +2,7 @@ import { CreatePost, Post, UpdatePost } from '../schemas/post.ts';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import prisma from '@/database/prisma.ts';
 import { DatabaseData, DatabaseError } from '@/schemas/database-data.ts';
+import { Prisma } from '@/generated/prisma/client.ts';
 
 export class PostsRepository {
   createPost(post: CreatePost): ResultAsync<DatabaseData<Post>, DatabaseError> {
@@ -154,7 +155,9 @@ export class PostsRepository {
       message: 'Post retrieved successfully',
     });
   }
-  async deletePost(id: number): Promise<Result<DatabaseData<Post>, DatabaseError>> {
+  async deletePost(
+    id: number,
+  ): Promise<Result<DatabaseData<Post>, DatabaseError>> {
     const result = ResultAsync.fromPromise(
       prisma.post.delete({
         where: { id },
@@ -163,12 +166,23 @@ export class PostsRepository {
           tags: true,
         },
       }),
-      (error) => ({
-        type: 'DATABASE_ERROR',
-        message: error instanceof Error
-          ? error.message
-          : 'Failed to delete post',
-      } as DatabaseError),
+      (error) => {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+          if (error.code === 'P2025') {
+            return {
+              type: 'NOT_FOUND',
+              message: 'Post not found',
+            } as DatabaseError;
+          }
+        }
+
+        return {
+          type: 'DATABASE_ERROR',
+          message: error instanceof Error
+            ? error.message
+            : 'Failed to delete post',
+        } as DatabaseError;
+      },
     );
 
     const deletedPost = await result;
@@ -179,9 +193,9 @@ export class PostsRepository {
 
     if (!deletedPost.value) {
       return err({
-        message: "Post not found",
-        type: "NOT_FOUND"
-      } as DatabaseError)
+        message: 'Post not found',
+        type: 'NOT_FOUND',
+      } as DatabaseError);
     }
     return ok({
       data: {
@@ -248,12 +262,23 @@ export class PostsRepository {
           message: 'Post updated successfully',
         };
       }),
-      (error) => ({
-        type: 'DATABASE_ERROR',
-        message: error instanceof Error
-          ? error.message
-          : 'Failed to update post',
-      } as DatabaseError),
+      (error) => {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+          if (error.code === 'P2025') {
+            return {
+              type: 'NOT_FOUND',
+              message: 'Post not found',
+            } as DatabaseError;
+          }
+        }
+
+        return {
+          type: 'DATABASE_ERROR',
+          message: error instanceof Error
+            ? error.message
+            : 'Failed to update post',
+        } as DatabaseError;
+      },
     );
   }
 }
